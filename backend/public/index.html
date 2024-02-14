@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SISTEMA DE COBRANZAS NR</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    #tabs-container {
+      display: flex;
+      background-color: #f0f0f0;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 15px;
+      text-align: center;
+      cursor: pointer;
+      border: 1px solid #ccc;
+    }
+
+    .tab-content {
+      display: none;
+      padding: 10px;
+    }
+
+    .sub-tabs-container {
+      display: flex;
+      background-color: #f0f0f0;
+    }
+
+    .sub-tab {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+
+<div>
+  <h1 style="text-align: center;">SISTEMA DE COBRANZAS NR</h1>
+  <div id="tabs-container">
+    <div class="tab" onclick="openTab('cuentasPorCobrar')">Cuentas por Cobrar</div>
+    
+  </div>
+
+  <div id="cuentasPorCobrar" class="tab-content">
+    <div class="sub-tabs-container">
+      <div class="sub-tab" onclick="openSubTab('clientes')">Clientes</div>
+      <div class="sub-tab" onclick="openSubTab('facturas')">Facturas</div>
+    </div>
+    <div id="clientes-content" style="display: none;">
+      <h2>Clientes</h2>
+      <div style="margin-bottom: 10px;">
+        <button onclick="mostrarFormulario('clientes')">Nuevo</button>
+        <button onclick="borrarClientes()">Borrar</button>
+        <button onclick="seleccionarTodos()">Seleccionar todo</button>
+        <input type="text" id="buscarClienteInput" placeholder="Buscar cliente">
+        <button onclick="buscarCliente()">Buscar</button>
+
+      </div>
+      <table border="1">
+        <thead>
+          <tr>
+            <th>Seleccionar</th> <!-- Encabezado para el checkbox -->
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Tipo de Cliente</th>
+            <th>Numero de Identificacion</th>
+            <th>Dirección</th>
+            <th>Teléfono</th>
+            <th>Saldo</th>
+        </tr>
+        </thead>
+        <tbody>
+          <!-- Aquí irán las filas de la tabla con los datos -->
+        </tbody>
+      </table>
+    </div>
+
+    
+  
+    <!-- Formulario para la subpestaña Clientes -->
+    <div id="clientes-formulario" style="display: none;">
+      <h2>Cliente</h2>
+      <form id="formClientes">
+        <!-- Campo de solo lectura para mostrar el ID del cliente -->
+        <label for="idCliente">ID:</label>
+        <input type="text" id="idCliente" name="idCliente" readonly>
+        
+        <!-- Campo oculto para enviar el ID del cliente al servidor -->
+        <input type="hidden" id="idClienteHidden" name="idCliente">
+        
+        <br>
+        <label for="nombreCliente">Nombre:</label>
+        <input type="text" id="nombreCliente" name="nombreCliente" required>
+        <br>
+        <label for="tipoCliente">Tipo de Cliente:</label>
+        <input type="text" id="tipoCliente" name="tipoCliente" required>
+        <br>
+        <label for="rifCliente">Numero de Identificacion:</label>
+        <input type="text" id="rifCliente" name="rifCliente" required>
+        <br>
+        <label for="direccionCliente">Dirección:</label>
+        <input type="text" id="direccionCliente" name="direccionCliente" required>
+        <br>
+        <label for="telefonoCliente">Teléfono:</label>
+        <input type="text" id="telefonoCliente" name="telefonoCliente" required>
+        <br>
+        <label for="saldoCliente">Saldo:</label>
+        <input type="text" id="saldoCliente" name="saldoCliente" required>
+        <br>
+        <button type="button" onclick="guardarCliente()">Guardar</button>
+        <button type="button" onclick="cancelarNuevo('clientes')">Cancelar</button>
+      </form>
+    </div>
+    
+    
+<script>
+
+function editarCliente() {
+    var form = document.getElementById("formClientes");
+    var formData = new FormData(form);
+
+    // Convertir formData a un objeto JSON
+    var jsonData = {};
+    formData.forEach((value, key) => {
+        jsonData[key] = value;
+    });
+
+    // Obtener el ID del cliente a editar
+    var idCliente = document.getElementById('idClienteHidden').value; // Obtener el ID del campo oculto
+
+    console.log('ID del cliente a editar (desde campo oculto):', idCliente); // Agregar un console.log para verificar el ID del cliente
+    console.log('Datos del cliente a editar:', jsonData); // Agregar un console.log para verificar los datos del cliente a editar
+
+    // Enviar los datos al servidor como JSON utilizando el método PUT
+    fetch('http://localhost:3000/api/clientes/' + idCliente, {
+        method: 'PUT', // Utilizar PUT para editar un cliente existente
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(jsonData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Respuesta del servidor:', data); // Agregar un console.log para verificar la respuesta del servidor
+        // Actualizar la tabla de clientes después de editar
+        cargarClientes();
+    })
+    .catch(error => console.error('Error al editar el cliente:', error));
+}
+
+
+  function guardarCliente() {
+    var form = document.getElementById("formClientes");
+    var formData = new FormData(form);
+
+    // Convertir formData a un objeto JSON
+    var jsonData = {};
+    formData.forEach((value, key) => {
+        jsonData[key] = value;
+    });
+
+    // Enviar los datos al servidor como JSON
+    fetch('http://localhost:3000/api/clientes', {
+        method: 'POST', // Utilizar POST para agregar un nuevo cliente
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(jsonData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log(data.message);
+        cancelarNuevo('clientes');
+
+        // Una vez que el cliente se guarda correctamente, obtener la lista actualizada de clientes
+        fetch('http://localhost:3000/api/clientes')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Reconstruir la tabla de clientes con los datos actualizados
+                actualizarTablaClientes(data);
+            })
+            .catch(error => console.error('Error al obtener la lista actualizada de clientes:', error));
+    })
+    .catch(error => console.error('Error al guardar el cliente:', error));
+}
+
+function cargarClientes() {
+    fetch('http://localhost:3000/api/clientes')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            actualizarTablaClientes(data);
+
+            // Agregar evento doble clic a cada fila de la tabla de clientes para editar
+            document.querySelectorAll('#clientes-content table tbody tr').forEach(row => {
+                row.addEventListener('dblclick', function() {
+                    // Obtener los datos del cliente de la fila seleccionada
+                    var idCliente = row.querySelector('td:nth-child(2)').textContent;
+                    var nombreCliente = row.querySelector('td:nth-child(3)').textContent;
+                    var tipoCliente = row.querySelector('td:nth-child(4)').textContent;
+                    var rifCliente = row.querySelector('td:nth-child(5)').textContent;
+                    var direccionCliente = row.querySelector('td:nth-child(6)').textContent;
+                    var telefonoCliente = row.querySelector('td:nth-child(7)').textContent;
+                    var saldoCliente = row.querySelector('td:nth-child(8)').textContent;
+
+                    // Llenar el formulario de edición con los datos del cliente seleccionado
+                    document.getElementById('idCliente').value = idCliente;
+                    document.getElementById('idClienteHidden').value = idCliente; // Campo oculto
+                    document.getElementById('nombreCliente').value = nombreCliente;
+                    document.getElementById('tipoCliente').value = tipoCliente;
+                    document.getElementById('rifCliente').value = rifCliente;
+                    document.getElementById('direccionCliente').value = direccionCliente;
+                    document.getElementById('telefonoCliente').value = telefonoCliente;
+                    document.getElementById('saldoCliente').value = saldoCliente;
+
+                    // Mostrar el formulario de edición
+                    mostrarFormulario('clientes');
+
+                    // Cambiar el evento clic del botón guardar a la función editarCliente()
+                    document.querySelector('#clientes-formulario button[type="button"]').setAttribute('onclick', 'editarCliente()');
+                    // Cambiar el texto del botón guardar a "Editar"
+                    document.querySelector('#clientes-formulario button[type="button"]').textContent = 'Editar';
+                });
+            });
+        })
+        .catch(error => console.error('Error al cargar clientes:', error));
+}
+
+
+
+
+// Llamar a la función para cargar los clientes cuando se muestra la subpestaña Clientes
+document.addEventListener('DOMContentLoaded', function() {
+    cargarClientes();
+    var clientesTab = document.getElementById('clientes');
+    if (clientesTab) {
+        clientesTab.addEventListener('click', function() {
+            cargarClientes();
+        });
+    }
+});
+
+
+function actualizarTablaClientes(clientes) {
+    var tablaClientes = document.querySelector('#clientes-content table tbody');
+    tablaClientes.innerHTML = ''; // Limpiar la tabla existente
+
+    // Agregar filas para cada cliente en la lista
+    clientes.forEach(cliente => {
+        var fila = `<tr>
+                        <td><input type="checkbox" name="clienteSeleccionado" value="${cliente.id_cliente}"></td>
+                        <td>${cliente.id_cliente}</td>
+                        <td>${cliente.nombre}</td>
+                        <td>${cliente.tipo_cliente}</td>
+                        <td>${cliente.rif}</td>
+                        <td>${cliente.direccion}</td>
+                        <td>${cliente.telefono}</td>
+                        <td>${cliente.saldo}</td>
+                    </tr>`;
+        tablaClientes.insertAdjacentHTML('beforeend', fila);
+    });
+}
+
+function seleccionarTodos() {
+    var checkboxes = document.querySelectorAll('#clientes-content table tbody input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = !checkbox.checked;
+    });
+}
+
+function borrarClientes() {
+    var checkboxes = document.querySelectorAll('#clientes-content table tbody input[type="checkbox"]:checked');
+    var idsClientes = Array.from(checkboxes).map(checkbox => checkbox.value);
+
+    // Enviar los IDs de los clientes seleccionados al servidor para borrarlos
+    fetch('http://localhost:3000/api/clientes', {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ids: idsClientes })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log(data.message);
+        // Actualizar la tabla de clientes después de borrar
+        cargarClientes();
+    })
+    .catch(error => console.error('Error al borrar los clientes:', error));
+}
+
+
+    // Llamar a la función para cargar los clientes cuando se muestra la subpestaña Clientes
+    document.addEventListener('DOMContentLoaded', function() {
+        cargarClientes();
+        var clientesTab = document.getElementById('clientes');
+        if (clientesTab) {
+            clientesTab.addEventListener('click', function() {
+                cargarClientes();
+            });
+        }
+    });
+
+    function buscarCliente() {
+    var buscarTexto = document.getElementById("buscarClienteInput").value;
+
+    // Realizar la solicitud al servidor para buscar clientes que coincidan con el texto de búsqueda
+    fetch('http://localhost:3000/api/clientes/buscar?buscar=' + buscarTexto)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Actualizar la tabla de clientes con los resultados de la búsqueda
+            actualizarTablaClientes(data);
+        })
+        .catch(error => console.error('Error al buscar clientes:', error));
+}
+
+</script>
+
+<div id="facturas-content" style="display: none;">
+  <h2>Facturas</h2>
+  <div style="margin-bottom: 10px;">
+      <button onclick="mostrarFormulario('facturas')">Nuevo</button>
+      <button id="btnBorrarFactura" onclick="borrarFactura()">Borrar Factura</button>
+      <button onclick="copiarFactura()">Copiar</button>
+      <input type="text" id="buscarFactura" placeholder="Buscar">
+      <button onclick="buscarFactura()">Buscar</button>
+  </div>
+
+  <table border="1">
+      <thead>
+          <tr>
+              <th>ID</th>
+              <th>Fecha de Entrada</th>
+              <th>Fecha de Salida</th>
+              <th>ID Cliente</th>
+              <th>Nombre Cliente</th>
+              <th>Factura No.</th>
+              <th>Importe</th>
+              <th>Descuento</th>
+              <th>Pendiente</th>
+              <th>Fecha Límite</th>
+              <th>Plazo Extra</th>
+          </tr>
+      </thead>
+      <tbody id="tablaFacturasBody"></tbody>
+          <!-- Aquí irán las filas de la tabla con los datos -->
+      </tbody>
+  </table>
+</div>
+
+<div id="facturas-formulario" style="display: none;">
+    <h2>Factura</h2>
+    <form id="formFacturas">
+        <input type="hidden" id="idFactura" name="idFactura"> <!-- Nuevo campo oculto para almacenar el ID de la factura -->
+        <label for="fechaEntrada">Fecha Entrada:</label>
+        <input type="date" id="fechaEntrada" name="fechaEntrada" required>
+        <br>
+        <label for="fechaSalida">Fecha Salida:</label>
+        <input type="date" id="fechaSalida" name="fechaSalida" required>
+        <br>
+        <label for="nombreClienteFactura">Nombre Cliente:</label>
+        <select id="nombreClienteFactura" name="nombreClienteFactura" required></select>
+        <br>
+        <input type="hidden" id="idClienteFactura" name="idClienteFactura">
+        <label for="facturaNo">Factura No.:</label>
+        <input type="text" id="facturaNo" name="facturaNo" required>
+        <br>
+        <label for="importe">Importe:</label>
+        <input type="text" id="importe" name="importe" required>
+        <br>
+        <label for="descuento">Descuento:</label>
+        <input type="text" id="descuento" name="descuento" required>
+        <br>
+        <label for="pendiente">Pendiente:</label>
+        <input type="text" id="pendiente" name="pendiente" required>
+        <br>
+        <label for="fechaLimite">Fecha Límite:</label>
+        <input type="date" id="fechaLimite" name="fechaLimite" required>
+        <br>
+        <label for="plazoExtra">Plazo Extra:</label>
+        <input type="text" id="plazoExtra" name="plazoExtra" required>
+        <br>
+        <button type="submit" id="btnGuardarFactura">Guardar</button>
+        <button type="button" id="btnEditarFactura" style="display: none;">Editar</button>
+        <button type="button" onclick="cancelarNuevo('facturas')">Cancelar</button>
+    </form>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+
+    function actualizarTablaFacturas(facturas) {
+    var tablaFacturas = document.getElementById('tablaFacturasBody');
+    tablaFacturas.innerHTML = ''; // Limpiar la tabla existente
+
+    // Agregar filas para cada factura en la lista
+    facturas.forEach(factura => {
+        // Convertir las fechas a un formato legible
+        var fechaEntrada = new Date(factura.fecha_entrada).toLocaleDateString();
+        var fechaSalida = new Date(factura.fecha_salida).toLocaleDateString();
+        var fechaLimite = new Date(factura.fecha_limite).toLocaleDateString();
+
+        var fila = `<tr>
+                    <td>${factura.id}</td> <!-- Mostrar el ID de la factura -->
+                    <td>${fechaEntrada}</td>
+                    <td>${fechaSalida}</td>
+                    <td>${factura.id_cliente}</td>
+                    <td>${factura.nombre_cliente}</td>
+                    <td>${factura.factura_no}</td>
+                    <td>${factura.importe}</td>
+                    <td>${factura.descuento}</td>
+                    <td>${factura.pendiente}</td>
+                    <td>${fechaLimite}</td>
+                    <td>${factura.plazo_extra}</td>
+                </tr>`;
+        tablaFacturas.insertAdjacentHTML('beforeend', fila);
+    });
+}
+
+     
+    // Función para cargar la lista de clientes
+    function cargarClientes() {
+          fetch('http://localhost:3000/api/clientes')
+              .then(response => {
+                  if (!response.ok) {
+                      throw new Error(`HTTP error! Status: ${response.status}`);
+                  }
+                  return response.json();
+              })
+              .then(data => {
+                  // Llenar el campo desplegable con los datos de los clientes
+                  const selectCliente = document.getElementById('nombreClienteFactura');
+                  const idCliente = document.getElementById('idClienteFactura');
+                  selectCliente.innerHTML = ''; // Limpiar el campo desplegable
+                  
+                  data.forEach(cliente => {
+                      const option = document.createElement('option');
+                      option.value = cliente.id_cliente;
+                      option.textContent = cliente.nombre;
+                      selectCliente.appendChild(option);
+                  });
+                  
+                  // Actualizar el campo ID_Cliente con el valor seleccionado
+                  selectCliente.addEventListener('change', () => {
+                      const selectedOption = selectCliente.options[selectCliente.selectedIndex];
+                      idCliente.value = selectedOption.value;
+                  });
+              })
+              .catch(error => console.error('Error al obtener clientes:', error));
+      }
+  
+      // Llamar a la función para cargar los clientes cuando el DOM esté completamente cargado
+      cargarClientes();
+      
+      // Función para cargar las facturas
+  function cargarFacturas() {
+      fetch('http://localhost:3000/api/facturas')
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error(`HTTP error! Status: ${response.status}`);
+              }
+              return response.json();
+          })
+          .then(data => {
+              actualizarTablaFacturas(data); // Actualizar la tabla de facturas con los datos recibidos del servidor
+              
+              // Agregar evento de doble clic a cada fila de la tabla de facturas
+              document.querySelectorAll('#tablaFacturasBody tr').forEach(fila => {
+                  fila.addEventListener('dblclick', () => {
+                      editarFactura(fila); // Llamar a la función editarFactura cuando se haga doble clic en una fila
+                  });
+              });
+          })
+          .catch(error => console.error('Error al cargar facturas:', error));
+  }
+  
+  cargarFacturas()
+
+   // Función para seleccionar una factura al hacer clic en ella
+   function seleccionarFactura(event) {
+        // Deseleccionar todas las filas de la tabla de facturas
+        document.querySelectorAll('#tablaFacturasBody tr').forEach(fila => {
+            fila.classList.remove('seleccionada');
+        });
+        
+        // Seleccionar la fila de la factura haciendo clic
+        event.currentTarget.classList.add('seleccionada');
+    }
+
+    // Función para borrar una factura
+    function borrarFactura() {
+        // Obtener todas las filas de la tabla de facturas
+        var filas = document.querySelectorAll('#tablaFacturasBody tr');
+        
+        // Iterar sobre las filas para encontrar la factura seleccionada
+        filas.forEach(fila => {
+            // Verificar si la fila tiene la clase "seleccionada"
+            if (fila.classList.contains('seleccionada')) {
+                var facturaId = fila.cells[0].textContent; // Suponiendo que el ID de la factura está en la primera celda
+                
+                // Hacer una solicitud al servidor para eliminar la factura con el ID seleccionado
+                fetch(`http://localhost:3000/api/facturas/${facturaId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log(data.message); // Mensaje de confirmación del servidor
+                    // Actualizar la tabla de facturas después de borrar
+                    cargarFacturas();
+                })
+                .catch(error => console.error('Error al borrar la factura:', error));
+            }
+        });
+    }
+  
+  function editarFactura(fila) {
+    // Agregar console.log para verificar los datos de la fila
+    console.log('Datos de la fila:', fila);
+
+    // Obtener los datos de la factura seleccionada de la fila
+    var idFactura = fila.cells[0].textContent;
+    var fechaEntrada = fila.cells[1].textContent;
+    var fechaSalida = fila.cells[2].textContent;
+    var idCliente = fila.cells[3].textContent;
+    var nombreCliente = fila.cells[4].textContent;
+    var facturaNo = fila.cells[5].textContent;
+    var importe = fila.cells[6].textContent;
+    var descuento = fila.cells[7].textContent;
+    var pendiente = fila.cells[8].textContent;
+    var fechaLimite = fila.cells[9].textContent;
+    var plazoExtra = fila.cells[10].textContent;
+
+    // Llenar el formulario de edición con los datos de la factura seleccionada
+    document.getElementById('idFactura').value = idFactura;
+    document.getElementById('fechaEntrada').value = fechaEntrada;
+    document.getElementById('fechaSalida').value = fechaSalida;
+    document.getElementById('nombreClienteFactura').value = nombreCliente; // Debes manejar esto dependiendo de tu implementación
+    document.getElementById('idClienteFactura').value = idCliente;
+    document.getElementById('facturaNo').value = facturaNo;
+    document.getElementById('importe').value = importe;
+    document.getElementById('descuento').value = descuento;
+    document.getElementById('pendiente').value = pendiente;
+    document.getElementById('fechaLimite').value = fechaLimite;
+    document.getElementById('plazoExtra').value = plazoExtra;
+
+    // Mostrar el formulario de edición
+    mostrarFormulario('facturas');
+
+   // Ocultar el botón de guardar
+   var btnGuardar = document.getElementById('btnGuardarFactura');
+    btnGuardar.style.display = 'none';
+
+    // Mostrar el botón exclusivo para editar
+    var btnEditar = document.getElementById('btnEditarFactura');
+    btnEditar.style.display = 'block';
+
+
+    
+}
+  
+function editarFacturaEnServidor() {
+    var form = document.getElementById("formFacturas");
+    var formData = new FormData(form);
+
+    var jsonObject = {};
+    formData.forEach((value, key) => {
+        jsonObject[key] = value;
+    });
+
+    var facturaId = jsonObject['idFactura'];
+
+    fetch(`http://localhost:3000/api/facturas/${facturaId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify(jsonObject)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Respuesta del servidor:', data);
+        cargarFacturas();
+        cancelarNuevo('facturas');
+    })
+    .catch(error => console.error('Error al enviar la solicitud PUT al servidor:', error));
+}
+
+ // Asigna la función para editar al evento onclick del botón editar
+var btnEditar = document.getElementById('btnEditarFactura');
+btnEditar.onclick = editarFacturaEnServidor;
+  
+      
+      // Función para guardar una nueva factura
+      function guardarFactura(event) {
+          event.preventDefault(); // Evitar el comportamiento predeterminado del formulario
+          
+          var form = document.getElementById("formFacturas");
+          var formData = new FormData(form);
+  
+          // Obtener el valor seleccionado en el campo desplegable de nombreClienteFactura
+          var selectCliente = document.getElementById('nombreClienteFactura');
+          var selectedOption = selectCliente.options[selectCliente.selectedIndex];
+          var idCliente = selectedOption.value;
+          
+          // Asignar el ID del cliente seleccionado al campo oculto idClienteFactura
+          formData.set('idClienteFactura', idCliente);
+  
+          // Obtener el ID de la factura desde el formulario de edición
+          var idFactura = document.getElementById('idFactura').value;
+  
+          // Asignar el ID de la factura al objeto JSON
+          formData.set('idFactura', idFactura);
+  
+          // Convertir formData a un objeto JSON
+          var jsonObject = {};
+          formData.forEach((value, key) => {
+              jsonObject[key] = value;
+          });
+          
+          console.log('Datos enviados al servidor:', jsonObject);
+  
+          // Enviar los datos al servidor como JSON
+          fetch('http://localhost:3000/api/facturas', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json', // Especificar el tipo de contenido como JSON
+                  'Accept': 'application/json',
+              },
+              body: JSON.stringify(jsonObject) // Convertir el objeto JSON a cadena JSON
+          })
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error(`HTTP error! Status: ${response.status}`);
+              }
+              return response.json();
+          })
+          .then(data => {
+              console.log('Respuesta del servidor:', data); // Puedes manejar la respuesta del servidor aquí
+              cargarFacturas(); // Volver a cargar las facturas después de agregar una nueva
+              cancelarNuevo('facturas');
+          })
+          .catch(error => console.error('Error al enviar la factura al servidor:', error));
+      }
+  
+      // Asignar el evento submit al formulario después de que el DOM esté completamente cargado
+      document.getElementById("formFacturas").addEventListener("submit", guardarFactura);
+  });
+
+  
+
+  function copiarFactura() {
+      // Lógica para copiar una factura
+  }
+  
+  function buscarFactura() {
+      var buscarTexto = document.getElementById("buscarFactura").value;
+      // Lógica para buscar una factura
+  }
+  </script>
+      
+  </div>
+
+  <div id="cuentasPorPagar" class="tab-content">
+    <div class="sub-tabs-container">
+      <div class="sub-tab" onclick="openSubTab('proveedores')">Proveedores</div>
+      <div class="sub-tab" onclick="openSubTab('facturasPagar')">Facturas</div>
+    </div>
+    <div id="proveedores-content" style="display: none;">
+      <h2>Proveedores</h2>
+      <div style="margin-bottom: 10px;">
+        <button onclick="mostrarFormulario('proveedores')">Nuevo</button>
+        <button onclick="editarProveedor()">Editar</button>
+        <button onclick="borrarProveedor()">Borrar</button>
+        <input type="text" id="buscarProveedor" placeholder="Buscar">
+        <button onclick="buscarProveedor()">Buscar</button>
+      </div>
+    
+      <table border="1">
+        <thead>
+          <tr>
+            <th>Proveedor</th>
+            <th>Nombre</th>
+            <th>Dirección</th>
+            <th>Teléfono</th>
+            <th>Contacto</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Aquí irán las filas de la tabla con los datos -->
+        </tbody>
+      </table>
+    </div>
+
+     <!-- Formulario para la subpestaña Proveedores -->
+     <div id="proveedores-formulario" style="display: none;">
+      <h2>Nuevo Proveedor</h2>
+      <form>
+        <label for="nombreProveedor">Proveedor:</label>
+        <input type="text" id="nombreProveedor" name="nombreProveedor" required>
+        <br>
+        <label for="nombre">Nombre:</label>
+        <input type="text" id="nombre" name="nombre" required>
+        <br>
+        <label for="direccion">Dirección:</label>
+        <input type="text" id="direccion" name="direccion" required>
+        <br>
+        <label for="telefono">Teléfono:</label>
+        <input type="text" id="telefono" name="telefono" required>
+        <br>
+        <label for="contacto">Contacto:</label>
+        <input type="text" id="contacto" name="contacto" required>
+        <br>
+        <!-- Agregar más campos según sea necesario -->
+        <br>
+        <button type="submit" onclick="guardarProveedor()">Guardar</button>
+        <button type="button" onclick="cancelarNuevo('proveedores')">Cancelar</button>
+      </form>
+    </div>
+    <!-- Fin del Formulario para la subpestaña Proveedores -->
+
+    <script>
+      function openTab(tabName) {
+        // Ocultar todas las pestañas principales
+        var tabs = document.getElementsByClassName("tab-content");
+        for (var i = 0; i < tabs.length; i++) {
+          tabs[i].style.display = "none";
+        }
+    
+        // Mostrar la pestaña principal seleccionada
+        document.getElementById(tabName).style.display = "block";
+    
+        // Reiniciar la visualización de las subpestañas
+        var subTabs = document.querySelectorAll('.tab-content > .sub-tabs-container > .sub-tab');
+        for (var i = 0; i < subTabs.length; i++) {
+          subTabs[i].style.display = "block";
+        }
+      }
+    
+      function openSubTab(subTabName) {
+        // Ocultar todas las subpestañas
+        var subTabs = document.querySelectorAll('.tab-content > .sub-tabs-container > .sub-tab');
+        for (var i = 0; i < subTabs.length; i++) {
+          subTabs[i].style.display = "none";
+        }
+    
+        // Mostrar la subpestaña seleccionada
+        document.getElementById(subTabName + '-content').style.display = "block";
+      }
+    
+      function mostrarFormulario(subTabName) {
+        // Ocultar todas las subpestañas
+        var subTabs = document.querySelectorAll('.tab-content > .sub-tabs-container > .sub-tab');
+        for (var i = 0; i < subTabs.length; i++) {
+          subTabs[i].style.display = "none";
+        }
+    
+        // Mostrar la subpestaña seleccionada
+        document.getElementById(subTabName + '-formulario').style.display = "block";
+      }
+    
+      function cancelarNuevo(subTabName) {
+        // Ocultar el formulario al cancelar
+        document.getElementById(subTabName + '-formulario').style.display = "none";
+      }
+    
+    </script>
+
+<div id="facturasPagar-content" style="display: none;">
+  <h2>Facturas por Pagar</h2>
+  <div style="margin-bottom: 10px;">
+    <button onclick="mostrarFormulario('facturasPagar')">Nuevo</button>
+    <button onclick="editarFacturaPagar()">Editar</button>
+    <button onclick="borrarFacturaPagar()">Borrar</button>
+    <input type="text" id="buscarFacturaPagar" placeholder="Buscar">
+    <button onclick="buscarFacturaPagar()">Buscar</button>
+  </div>
+  
+  <!-- Fin del Formulario para la subpestaña Facturas -->
+
+  <table border="1">
+    <thead>
+      <tr>
+        <th>Fecha de Llegada</th>
+        <th>Proveedor</th>
+        <th>Nombre</th>
+        <th>Factura No.</th>
+        <th>Importe</th>
+        <th>Descuento</th>
+        <th>Pendiente</th>
+        <th>Vence</th>
+        <th>Descripción</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Aquí irán las filas de la tabla con los datos -->
+    </tbody>
+  </table>
+</div>
+
+<!-- Formulario para la subpestaña Facturas -->
+<div id="facturasPagar-formulario" style="display: none;">
+  <h2>Nueva Factura</h2>
+  <form>
+    <label for="fechaLlegada">Fecha de Llegada:</label>
+    <input type="date" id="fechaLlegada" name="fechaLlegada" required>
+    <br>
+    <label for="proveedorFactura">Proveedor:</label>
+    <input type="text" id="proveedorFactura" name="proveedorFactura" required>
+    <br>
+    <label for="nombreFacturaPagar">Nombre:</label>
+    <input type="text" id="nombreFacturaPagar" name="nombreFacturaPagar" required>
+    <br>
+    <label for="facturaNoPagar">Factura No.:</label>
+    <input type="text" id="facturaNoPagar" name="facturaNoPagar" required>
+    <br>
+    <label for="importeFactura">Importe:</label>
+    <input type="text" id="importeFactura" name="importeFactura" required>
+    <br>
+    <label for="descuentoFactura">Descuento:</label>
+    <input type="text" id="descuentoFactura" name="descuentoFactura" required>
+    <br>
+    <label for="pendienteFactura">Pendiente:</label>
+    <input type="text" id="pendienteFactura" name="pendienteFactura" required>
+    <br>
+    <label for="venceFactura">Vence:</label>
+    <input type="date" id="venceFactura" name="venceFactura" required>
+    <br>
+    <label for="descripcionFactura">Descripción:</label>
+    <input type="text" id="descripcionFactura" name="descripcionFactura" required>
+    <br>
+    <!-- Agregar más campos según sea necesario -->
+    <br>
+    <button type="submit" onclick="guardarFacturaPagar()">Guardar</button>
+    <button type="button" onclick="cancelarNuevo('facturasPagar')">Cancelar</button>
+  </form>
+</div>
+
+
+    <script>
+      function nuevaFacturaPagar() {
+        // Lógica para agregar una nueva factura por pagar
+      }
+
+      function editarFacturaPagar() {
+        // Lógica para editar una factura por pagar
+      }
+
+      function borrarFacturaPagar() {
+        // Lógica para borrar una factura por pagar
+      }
+
+      function buscarFacturaPagar() {
+        var buscarTexto = document.getElementById("buscarFacturaPagar").value;
+        // Lógica para buscar una factura por pagar
+      }
+    </script>
+  </div>
+</div>
+
+<script>
+  function openTab(tabName) {
+    // Ocultar todas las pestañas principales
+    var tabs = document.getElementsByClassName("tab-content");
+    for (var i = 0; i < tabs.length; i++) {
+      tabs[i].style.display = "none";
+    }
+
+    // Mostrar la pestaña principal seleccionada
+    document.getElementById(tabName).style.display = "block";
+  }
+
+  function openSubTab(subTabName) {
+    // Ocultar todas las subpestañas
+    var subTabs = document.querySelectorAll('.tab-content > .sub-tabs-container > .sub-tab');
+    for (var i = 0; i < subTabs.length; i++) {
+      subTabs[i].style.display = "none";
+    }
+
+    // Mostrar la subpestaña seleccionada
+    document.getElementById(subTabName + '-content').style.display = "block";
+  }
+</script>
+
+</body>
+</html>
