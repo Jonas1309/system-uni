@@ -174,6 +174,7 @@ export default function Clientes() {
             <Nav className="me-auto">
               <NavDropdown title="Cuentas por cobrar" id="basic-nav-dropdown">
                 <NavDropdown.Item href="/clientes">clientes</NavDropdown.Item>
+                <NavDropdown.Item href="/facturacion">facturacion</NavDropdown.Item>
               </NavDropdown>
             </Nav>
           </Navbar.Collapse>

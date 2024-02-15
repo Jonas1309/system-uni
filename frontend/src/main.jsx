@@ -10,6 +10,8 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import Clientes from './pages/Clientes/Clientes.jsx';
+import Facturacion from './pages/Facturacion/Facturacion.jsx';
+
 
 const router = createBrowserRouter([
   {
@@ -20,6 +22,10 @@ const router = createBrowserRouter([
     path: "/clientes",
     element: <Clientes />
   },
+  { 
+    path: "/facturacion",
+    element: <Facturacion />
+  }
 
 ]);
 

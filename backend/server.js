@@ -13,7 +13,7 @@ app.use(cors());
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
-  password: '1234',
+  password: 'K4i!5Zd"6:5!',
   database: 'sistema_cobranzas'
 });
 
